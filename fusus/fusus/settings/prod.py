@@ -1,4 +1,3 @@
 from .common import *
-
 DEBUG = False
-ALLOWED_HOSTS = ['yourdomain.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']

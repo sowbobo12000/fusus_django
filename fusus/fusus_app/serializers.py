@@ -3,6 +3,7 @@ from .models import User, Organization
 
 
 class UserSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
     class Meta:
         model = User
         fields = '__all__'

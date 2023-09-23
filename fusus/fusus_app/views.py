@@ -1,7 +1,7 @@
 from rest_framework import serializers, viewsets
 from .serializers import UserSerializer, OrganizationSerializer, GroupsSerializer, MinimalUserSerializer
 from .models import User, Organization
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -11,6 +11,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 import requests
 from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate
 
 from enum import Enum
 
@@ -18,29 +19,58 @@ from enum import Enum
 class UserTypeMixin:
     def get_payload_from_token(self):
         token = self.request.headers.get('Authorization').split()[1]
-        decoded_token = RefreshToken(token)
-        return decoded_token.payload
+        decoded_token = UntypedToken(token)
+        user_id = decoded_token.payload.get("user_id")
+
+        user = User.objects.get(id=user_id)
+
+        payload = {
+            'user_id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'phone': user.phone,
+            'organization': user.organization.name if user.organization else None,
+            'birthdate': user.birthdate,
+            'user_type': user.user_type
+        }
+
+        return payload
 
 
 class UserType(Enum):
-    ADMINISTRATOR = "Administrator"
-    VIEWER = "Viewer"
-    USER = "User"
+    ADMINISTRATOR = "ADMIN"
+    VIEWER = "VIEWER"
+    USER = "USER"
 
 
 @api_view(['POST'])
 def login(request):
     email = request.data.get("email")
-    try:
-        user = User.objects.get(email=email)
+    password = request.data.get("password")
+
+    user = authenticate(email=email, password=password)
+
+    if user is not None:
         refresh = RefreshToken.for_user(user)
         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)})
-    except User.DoesNotExist:
-        return Response({'error': 'Invalid Email'}, status=400)
+    else:
+        return Response({'error': 'Invalid Email or Password'}, status=400)
+
+
+def login_view(request):
+    if request.method == "POST":
+        response = login(request)
+        if response.status_code == 200:
+            return redirect('user_list')
+        else:
+            error_message = response.data.get("error", "Unknown error")
+            return render(request, 'login.html', {'error_message': error_message})
+    else:
+        return render(request, 'login.html')
+
 
 def user_create(request):
     if request.method == "POST":
-        # 폼에서 제공된 데이터로 사용자 생성 로직 추가
         name = request.POST['name']
         phone = request.POST['phone']
         email = request.POST['email']
@@ -60,10 +90,17 @@ def user_create(request):
         user.set_password(password)
         user.save()
 
-        return redirect('user_list')  # 사용자 목록 페이지로 리디렉션
+        return redirect('user_list')
     else:
         organizations = Organization.objects.all()
-        return render(request, 'create_user.html', {'organizations': organizations})
+        user_type_choices = User.USER_TYPE_CHOICES
+        context = {
+            'organizations': organizations,
+            'user_type_choices': user_type_choices,
+        }
+        return render(request, 'create_user.html', context)
+
+
 def user_list(request):
     users = User.objects.all()
     return render(request, 'user_list.html', {'users': users})
@@ -90,20 +127,24 @@ class GroupView(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
-    queryset = User.objects.all()
+    queryset = User.objects.all().select_related('organization')  # 조직 정보도 함께 가져옵니다.
     serializer_class = UserSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, ]
     search_fields = ['name', 'email']
     filter_fields = ['phone']
 
+
     def get_queryset(self):
         payload = self.get_payload_from_token()
         user_type = payload.get("user_type")
+        user_id = payload.get("user_id")
 
-        if user_type in [UserType.ADMINISTRATOR.value, UserType.VIEWER.value]:
-            user_id = payload.get("user_id")
+        if user_type == UserType.ADMINISTRATOR.value or user_type == UserType.VIEWER.value:
             user = User.objects.get(id=user_id)
             return self.queryset.filter(organization=user.organization)
+
+        elif user_type == UserType.USER.value:
+            return self.queryset.filter(id=user_id)
 
         return self.queryset.none()
 
@@ -124,11 +165,32 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
             return Response({"detail": "Not authorized for Viewer"}, status=status.HTTP_403_FORBIDDEN)
 
         if user_type in [UserType.ADMINISTRATOR.value, UserType.USER.value]:
-            serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # 필요한 필드를 추출합니다.
+            name = request.data.get("name")
+            phone = request.data.get("phone")
+            birthdate = request.data.get("birthdate")
+            organization_id = request.data.get("organization")
+            user_type = request.data.get("user_type")
+            password = request.data.get("password")
+
+            # UserManager의 create_user 메소드를 사용하여 사용자를 생성합니다.
+            try:
+                user = User.objects.create_user(
+                    email=email,
+                    name=name,
+                    phone=phone,
+                    birthdate=birthdate,
+                    organization_id=organization_id,
+                    user_type=user_type,
+                    password=password
+                )
+            except Exception as e:
+                return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 생성된 사용자의 정보를 Serializer를 통해 변환하여 반환합니다.
+            serializer = UserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response({"detail": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -140,7 +202,19 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
         user = self.get_object()
 
         if user_type == "ADMINISTRATOR" or int(user_id) == user.id:
-            serializer = UserSerializer(user, data=request.data, partial=True)
+
+            # 만약 비밀번호가 request.data에 있다면, 해싱하여 업데이트합니다.
+            if "password" in request.data:
+                user.set_password(request.data["password"])
+                user.save()
+
+                # 비밀번호는 직렬화된 응답에서 제거합니다.
+                updated_data = request.data.copy()
+                del updated_data["password"]
+            else:
+                updated_data = request.data
+
+            serializer = UserSerializer(user, data=updated_data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -187,7 +261,7 @@ class OrganizationDetailView(APIView, UserTypeMixin):
         if user_type != UserType.ADMINISTRATOR.value:
             return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = OrganizationSerializer(organization, data=request.data, partial=True)
+        serializer = OrganizationSerializer(organization, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

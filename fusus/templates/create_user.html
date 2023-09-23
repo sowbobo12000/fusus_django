@@ -26,10 +26,10 @@
 
     <label for="user_type">User Type:</label><br>
     <select id="user_type" name="user_type">
-        {% for value, display_name in user.USER_TYPE_CHOICES %}
+        {% for value, display_name in user_type_choices %}
         <option value="{{ value }}">{{ display_name }}</option>
         {% endfor %}
-    </select><br><br>
+    </select>
 
     <label for="password">Password:</label><br>
     <input type="password" id="password" name="password" required><br><br>

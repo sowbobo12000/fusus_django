@@ -1,7 +1,7 @@
 from rest_framework import serializers, viewsets
 from .serializers import UserSerializer, OrganizationSerializer, GroupsSerializer, MinimalUserSerializer
 from .models import User, Organization
-from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
+from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken, AccessToken
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -19,8 +19,8 @@ from enum import Enum
 class UserTypeMixin:
     def get_payload_from_token(self):
         token = self.request.headers.get('Authorization').split()[1]
-        decoded_token = UntypedToken(token)
-        user_id = decoded_token.payload.get("user_id")
+        decoded_token = AccessToken(token)
+        user_id = decoded_token["user_id"]
 
         user = User.objects.get(id=user_id)
 
@@ -146,6 +146,21 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
             return self.queryset.filter(id=user_id)
 
         return self.queryset.none()
+
+    def retrieve(self, request, *args, **kwargs):
+        payload = self.get_payload_from_token()
+        user_id = payload.get("user_id")
+        requesting_user = User.objects.get(id=user_id)
+
+        user_from_db = User.objects.filter(id=kwargs.get('pk')).first()
+        if not user_from_db or user_from_db.organization != requesting_user.organization:
+            return Response({"detail": "Not authorized to view user from another organization"},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        user = self.get_object()
+
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
 
     def create(self, request):
         payload = self.get_payload_from_token()

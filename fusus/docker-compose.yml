@@ -13,24 +13,21 @@ services:
       - "8000:8000"
     depends_on:
       - db
-    env_file:
-      - ENV/.env.prod
 
   db:
     image: mysql:5.7
     environment:
-      MYSQL_ROOT_PASSWORD: $$DB_PASSWORD
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_HOST: '%'
-      MYSQL_DATABASE: $$DB_NAME
-      MYSQL_USER: $$DB_USER
-      MYSQL_PASSWORD: $$DB_PASSWORD
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     volumes:
       - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
-    env_file:
-      - ENV/.env.prod
 
 volumes:
   db_data:

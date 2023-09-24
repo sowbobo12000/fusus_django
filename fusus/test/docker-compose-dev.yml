@@ -3,33 +3,34 @@ version: '3'
 services:
   web:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     command: /bin/sh -c "wait-for-it db:3306 -- python manage.py migrate && python manage.py insert_initial_data && python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - .:/app
+      - ..:/app
     ports:
       - "8000:8000"
     depends_on:
       - db
     env_file:
-      - ENV/.env.dev
+      - .env
 
   db:
     image: mysql:latest
     environment:
-      MYSQL_ROOT_PASSWORD: 'password_dev'
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_HOST: '%'
-      MYSQL_DATABASE: 'db_dev'
-      MYSQL_USER: 'user_dev'
-      MYSQL_PASSWORD: 'password_dev'
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     volumes:
       - db_data:/var/lib/mysql
+      - ../init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
     env_file:
-      - ENV/.env.dev
+      - .env
 
 volumes:
   db_data:

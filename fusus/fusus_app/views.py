@@ -57,53 +57,53 @@ def login(request):
         return Response({'error': 'Invalid Email or Password'}, status=400)
 
 
-def login_view(request):
-    if request.method == "POST":
-        response = login(request)
-        if response.status_code == 200:
-            return redirect('user_list')
-        else:
-            error_message = response.data.get("error", "Unknown error")
-            return render(request, 'login.html', {'error_message': error_message})
-    else:
-        return render(request, 'login.html')
+# def login_view(request):
+#     if request.method == "POST":
+#         response = login(request)
+#         if response.status_code == 200:
+#             return redirect('user_list')
+#         else:
+#             error_message = response.data.get("error", "Unknown error")
+#             return render(request, 'login.html', {'error_message': error_message})
+#     else:
+#         return render(request, 'login.html')
 
 
-def user_create(request):
-    if request.method == "POST":
-        name = request.POST['name']
-        phone = request.POST['phone']
-        email = request.POST['email']
-        organization = Organization.objects.get(id=request.POST['organization'])
-        birthdate = request.POST['birthdate']
-        user_type = request.POST['user_type']
-        password = request.POST['password']
+# def user_create(request):
+#     if request.method == "POST":
+#         name = request.POST['name']
+#         phone = request.POST['phone']
+#         email = request.POST['email']
+#         organization = Organization.objects.get(id=request.POST['organization'])
+#         birthdate = request.POST['birthdate']
+#         user_type = request.POST['user_type']
+#         password = request.POST['password']
+#
+#         user = User(
+#             name=name,
+#             phone=phone,
+#             email=email,
+#             organization=organization,
+#             birthdate=birthdate,
+#             user_type=user_type
+#         )
+#         user.set_password(password)
+#         user.save()
+#
+#         return redirect('user_list')
+#     else:
+#         organizations = Organization.objects.all()
+#         user_type_choices = User.USER_TYPE_CHOICES
+#         context = {
+#             'organizations': organizations,
+#             'user_type_choices': user_type_choices,
+#         }
+#         return render(request, 'create_user.html', context)
 
-        user = User(
-            name=name,
-            phone=phone,
-            email=email,
-            organization=organization,
-            birthdate=birthdate,
-            user_type=user_type
-        )
-        user.set_password(password)
-        user.save()
 
-        return redirect('user_list')
-    else:
-        organizations = Organization.objects.all()
-        user_type_choices = User.USER_TYPE_CHOICES
-        context = {
-            'organizations': organizations,
-            'user_type_choices': user_type_choices,
-        }
-        return render(request, 'create_user.html', context)
-
-
-def user_list(request):
-    users = User.objects.all()
-    return render(request, 'user_list.html', {'users': users})
+# def user_list(request):
+#     users = User.objects.all()
+#     return render(request, 'user_list.html', {'users': users})
 
 
 class GroupView(APIView):
@@ -132,7 +132,6 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, ]
     search_fields = ['name', 'email']
     filter_fields = ['phone']
-
 
     def get_queryset(self):
         payload = self.get_payload_from_token()
@@ -166,7 +165,6 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
 
         if user_type in [UserType.ADMINISTRATOR.value, UserType.USER.value]:
 
-            # 필요한 필드를 추출합니다.
             name = request.data.get("name")
             phone = request.data.get("phone")
             birthdate = request.data.get("birthdate")
@@ -174,7 +172,6 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
             user_type = request.data.get("user_type")
             password = request.data.get("password")
 
-            # UserManager의 create_user 메소드를 사용하여 사용자를 생성합니다.
             try:
                 user = User.objects.create_user(
                     email=email,
@@ -188,33 +185,30 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
             except Exception as e:
                 return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            # 생성된 사용자의 정보를 Serializer를 통해 변환하여 반환합니다.
             serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response({"detail": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST)
 
-    def update(self, request, pk=None):
+    def update(self, request, pk=None, partial=False):
         payload = self.get_payload_from_token()
         user_type = payload.get("user_type")
         user_id = payload.get("user_id")
 
         user = self.get_object()
 
-        if user_type == "ADMINISTRATOR" or int(user_id) == user.id:
+        if user_type == UserType.ADMINISTRATOR.value or int(user_id) == user.id:
 
-            # 만약 비밀번호가 request.data에 있다면, 해싱하여 업데이트합니다.
             if "password" in request.data:
                 user.set_password(request.data["password"])
                 user.save()
 
-                # 비밀번호는 직렬화된 응답에서 제거합니다.
                 updated_data = request.data.copy()
                 del updated_data["password"]
             else:
                 updated_data = request.data
 
-            serializer = UserSerializer(user, data=updated_data)
+            serializer = UserSerializer(user, data=updated_data, partial=partial)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -226,12 +220,15 @@ class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
         payload = self.get_payload_from_token()
         user_type = payload.get("user_type")
 
-        if user_type != "ADMINISTRATOR":
+        if user_type != UserType.ADMINISTRATOR.value:
             return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
 
-        user = self.get_object()
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            user = User.objects.get(pk=pk)
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except User.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class OrganizationDetailView(APIView, UserTypeMixin):
@@ -253,7 +250,7 @@ class OrganizationDetailView(APIView, UserTypeMixin):
         serializer = OrganizationSerializer(organization)
         return Response(serializer.data)
 
-    def patch(self, request, pk):
+    def patch(self, request, pk, partial=False):
         organization = self.get_object(pk)
         payload = self.get_payload_from_token()
         user_type = payload.get("user_type")
@@ -261,7 +258,7 @@ class OrganizationDetailView(APIView, UserTypeMixin):
         if user_type != UserType.ADMINISTRATOR.value:
             return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = OrganizationSerializer(organization, data=request.data)
+        serializer = OrganizationSerializer(organization, data=request.data, partial=partial)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -304,7 +301,7 @@ class InfoView(APIView):
             public_ip = requests.get('https://api.ipify.org').text
 
             data = {
-                'user_name': user.username,
+                'user_name': user.name,
                 'id': user.id,
                 'organization_name': user.organization.name,
                 'public_ip': public_ip

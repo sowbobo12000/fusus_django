@@ -80,7 +80,10 @@ class UserTests(BaseTestCase):
             "email": "newuser@test.com",
             "name": "New User",
             "password": "password",
-            # Add other necessary fields
+            "phone": "919",
+            "birthdate": "1992-12-20",
+            "user_type": "USER",
+            "organization": self.org2.id
         }
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
         response = self.client.post(url, data, format='json')

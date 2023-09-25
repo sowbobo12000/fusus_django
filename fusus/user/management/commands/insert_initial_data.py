@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
         for user_type in ['ADMIN', 'VIEWER', 'USER']:
             for idx, org in enumerate([org1, org2], 1):
-                # Create 2 users
+
                 for i in range(1, 3):
                     User.objects.create_user(
                         email=f'{user_type.lower()}{(idx - 1) * 2 + i}@example.com',

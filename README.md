@@ -79,7 +79,7 @@ API supports JWT authentication.
 
 1. **[GET]** `/api/info/`: Returns system details such as authenticated user's name, ID, organization name, and server's public IP.
 
-### Testing
+## Testing
 
 2. Run the tests:
     ```bash

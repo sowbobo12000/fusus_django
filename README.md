@@ -51,7 +51,7 @@ This Django application provides a comprehensive user and organization managemen
 
 ## API Endpoints
 
-## Auth Endpoints:
+### Auth Endpoints:
 
 API supports JWT authentication.  
 1. **[POST]** `/api/auth/login/`: Authenticate using email address.  
@@ -60,7 +60,7 @@ API supports JWT authentication.
    - **Viewer**: List and retrieve any user in his organization.  
    - **User**: CRU his own user details.  
 
-## User Endpoints:
+### User Endpoints:
 
 1. **[GET]** `/api/users/`: List all users within the authenticated user's organization (only if the user is `Administrator` or `Viewer`). Supports search by name, email, and filter by phone.  
 2. **[GET]** `/api/users/{id}/`: Retrieve specific user's information, including organization ID and name.  
@@ -68,18 +68,18 @@ API supports JWT authentication.
 4. **[PATCH]** `/api/users/{id}`: Update information of the user if the request user is an `Administrator` or the user himself.  
 5. **[DELETE]** `/api/users/{id}`: Delete a user. Accessible only by the `Administrator` of his organization.  
 
-## Organization Endpoints:
+### Organization Endpoints:
 
 1. **[GET]** `/api/organizations/{id}/`: Retrieve information of a specific organization if the request user is an `Administrator` or `Viewer`.  
 2. **[PATCH]** `/api/organizations/{id}`: Update organization details. Only accessible by `Administrator`.  
 3. **[GET]** `/api/organization/{id}/users`: List all users in a specific organization. Returns just user ID and name.  
 4. **[GET]** `/api/organization/{id}/users/{id}/`: Retrieve specific user's ID and name within an organization.  
 
-## Other Endpoints:
+### Other Endpoints:
 
 1. **[GET]** `/api/info/`: Returns system details such as authenticated user's name, ID, organization name, and server's public IP.
 
-## Testing
+### Testing
 
 2. Run the tests:
     ```bash

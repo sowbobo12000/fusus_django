@@ -91,6 +91,7 @@ celerybeat.pid
 *.venv
 venv/
 *.env
+*.env.*
 
 # IDEs
 .idea/

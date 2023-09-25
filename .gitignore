@@ -90,7 +90,6 @@ celerybeat.pid
 # virtualenv
 *.venv
 venv/
-ENV/
 *.env
 
 # IDEs

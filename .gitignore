@@ -86,13 +86,12 @@ ipython_config.py
 celerybeat-schedule
 celerybeat.pid
 
-# dotenv
-*/test/.env
 
 # virtualenv
 *.venv
 venv/
 ENV/
+*.env
 
 # IDEs
 .idea/

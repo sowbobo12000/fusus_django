@@ -22,8 +22,29 @@ This Django application provides a comprehensive user and organization managemen
    ## prod environment
    cd fusus/
     ```
+3. Create .env file
+    ```bash
+    ## dev
+   cd fusus/test
+   touch .env
+   
+   ## prod
+   cd fusus
+   touch .env
+   
+   ## both
+       ```plaintext
+    ENV={ENV (Dev or Prod)}
+    DB_NAME={DB NAME}
+    DB_USER={DB USER}
+    DB_PASSWORD={DB PASSWORD}
+    DB_HOST=db
+    DB_PORT=3306
+    ```
 
-3. Run Docker Container
+    ```
+   
+4. Run Docker Container
     ```bash
     ## dev
    docker-compose -f docker-compose-dev.yml up -d
@@ -32,13 +53,13 @@ This Django application provides a comprehensive user and organization managemen
    docker-compose up -d
     ```
    
-4. Run Migration for Production (Auto migration for Dev)
+5. Run Migration for Production (Auto migration for Dev)
     ```bash
    ## Wait For 15 seconds after starting the django container
     docker exec -it fusus-web-1 /bin/bash
     python manage.py migrate
     ```
-5. Down the docker container
+6. Down the docker container
     ```bash
     ## dev
    docker-compose -f docker-compose-dev.yml down -v

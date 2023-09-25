@@ -33,7 +33,14 @@ This Django application provides a comprehensive user and organization managemen
    docker-compose build --no-cache
    docker-compose up -d
     ```
-4. Down the docker container
+   
+4. Run Migration for Production (Auto migration for Dev)
+    ```bash
+   ## Wait For 15 seconds after starting the django container
+    docker exec -it fusus-web-1 /bin/bash
+    python manage.py migrate
+    ```
+5. Down the docker container
     ```bash
     ## dev
    docker-compose -f docker-compose-dev.yml down -v

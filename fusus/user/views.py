@@ -124,8 +124,6 @@ class UserViewSet(viewsets.ModelViewSet):
         user_type = request.user.user_type
         user = self.get_object()
 
-        print(IsUser().has_object_permission(request, None, user))
-
         if (user_type == UserType.ADMINISTRATOR.value and
                 request.user.organization == user.organization) or IsUser().has_object_permission(request, None, user):
             if "password" in request.data:
@@ -136,17 +134,14 @@ class UserViewSet(viewsets.ModelViewSet):
                 del updated_data["password"]
             else:
                 updated_data = request.data
-            print("REached1")
 
             serializer = UserSerializer(user, data=updated_data, partial=partial)
-            print("Reached2")
+
             if serializer.is_valid():
-                print("Reached3")
                 serializer.save()
-                print("Reached4")
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        print("Reached5")
+
         return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
 
     def destroy(self, request, pk=None):

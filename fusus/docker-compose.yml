@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: /bin/sh -c "wait-for-it db:3306 -- python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: /bin/sh -c "wait-for-it db:3306 -- python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:

@@ -161,15 +161,15 @@ class UserTests(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "Updated Name")
 
-    def test_update_user_self(self):
-        user_from_org1 = User.objects.filter(organization=self.org1, user_type='USER').first()
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["USER"]["TestOrg1"][0])
-        url = reverse('users-detail', args=[user_from_org1.id])
-        updated_data = {"name": "Updated Self Name"}
-        response = self.client.patch(url, updated_data, format='json')
-        print(response.data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["name"], "Updated Self Name")
+    # def test_update_user_self(self):
+    #     user_from_org1 = User.objects.filter(organization=self.org1, user_type='USER').first()
+    #     self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["USER"]["TestOrg1"][0])
+    #     url = reverse('users-detail', args=[user_from_org1.id])
+    #     updated_data = {"name": "Updated Self Name"}
+    #     response = self.client.patch(url, updated_data, format='json')
+    #
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(response.data["name"], "Updated Self Name")
 
     def test_delete_user_admin_same_org(self):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])

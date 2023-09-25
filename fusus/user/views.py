@@ -49,7 +49,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'destroy']:
             permission_classes = [IsAdministrator]
-        elif self.action in ['update']:
+        elif self.action in ['update', 'partial_update']:
             permission_classes = [IsAdministrator | IsUser]
         elif self.action in ['retrieve', 'list']:
             permission_classes = [IsAdministrator | IsViewer | IsUser]

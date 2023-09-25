@@ -13,7 +13,7 @@ services:
     depends_on:
       - db
     env_file:
-      - .env
+      - ENV/.env.prod
 
   db:
     image: mysql:latest
@@ -30,7 +30,7 @@ services:
     ports:
       - "3306:3306"
     env_file:
-      - .env
+      - ENV/.env.prod
 
 volumes:
   db_data:

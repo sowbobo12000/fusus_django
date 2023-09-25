@@ -25,15 +25,16 @@ This Django application provides a comprehensive user and organization managemen
 3. Create .env file
     ```bash
     ## dev
-   cd fusus/test
-   touch .env
+   cd fusus/ENV
+   touch .env.dev.prod
    
    ## prod
-   cd fusus
-   touch .env
+   cd fusus/ENV
+   touch .env.dev.prod
    
    ## both plain text
     ENV={ENV (Dev or Prod)}
+    DB_NAME={DB NAME}
     DB_NAME={DB NAME}
     DB_USER={DB USER}
     DB_PASSWORD={DB PASSWORD}
@@ -45,10 +46,10 @@ This Django application provides a comprehensive user and organization managemen
 4. Run Docker Container
     ```bash
     ## dev
-   docker-compose -f docker-compose-dev.yml up -d
+   docker-compose --env-file ../ENV/.env.dev -f docker-compose-dev.yml up -d
    
    ## prod
-   docker-compose up -d
+   docker-compose --env-file ENV/.env.prod up -d
     ```
    
 5. Run Migration for Production (Auto migration for Dev)
@@ -102,7 +103,7 @@ API supports JWT authentication.
     ```bash
    cd fusus/test
    docker-compose -f docker-compose-dev.yml down -v
-   docker-compose -f docker-compose-dev.yml up -dev
+   docker-compose --env-file ../ENV/.env.dev -f docker-compose-dev.yml up -d
    docker ps 
    docker exec -it test-web-1 /bin/bash
    python manage.py test user org

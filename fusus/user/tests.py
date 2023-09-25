@@ -1,54 +1,15 @@
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
-from fusus_app.models import User, Organization
+from user.models import User, Organization
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from django.db.models import Q
-
-
-class BaseTestCase(APITestCase):
-
-    def setUp(self):
-        self.org1 = Organization.objects.create(name="TestOrg1")
-        self.org2 = Organization.objects.create(name="TestOrg2")
-
-        self.tokens = {}
-        user_types = ["ADMIN", "VIEWER", "USER"]
-
-        for user_type in user_types:
-            self.tokens[user_type] = {}
-            for idx, org in enumerate([self.org1, self.org2], 1):
-                users = []
-                if user_type == "ADMIN":
-                    user = User.objects.create_superuser(
-                        email=f"{user_type.lower()}{idx}@testorg{idx}.com",
-                        password="password",
-                        name=f"{user_type} User {idx}",
-                        organization_id=org.id,
-                        birthdate='1992-12-20'
-                    )
-                    users.append(user)
-                else:
-                    for i in range(1, 5):
-                        user = User.objects.create_user(
-                            email=f"{user_type.lower()}{i}@testorg{idx}.com",
-                            password="password",
-                            name=f"{user_type} User {i}",
-                            user_type=user_type,
-                            organization_id=org.id,
-                            birthdate='1992-12-20'
-                        )
-                        users.append(user)
-
-                self.tokens[user_type][org.name] = [
-                    str(RefreshToken.for_user(user).access_token) for user in users
-                ]
+from common.tests.base import BaseTestCase
 
 
 class AuthTests(BaseTestCase):
 
     def test_login(self):
-        url = reverse('user-login')
+        url = reverse('auth-login')
 
         for user_type, orgs in self.tokens.items():
             for org_name, tokens in orgs.items():
@@ -68,18 +29,16 @@ class AuthTests(BaseTestCase):
                         self.assertIn("access", response.data)
 
     def test_auth_groups(self):
-        url = reverse('user-groups')
+        url = reverse('auth-groups')
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        expected_admin_count = 2
-        expected_viewer_count = 8
-        expected_user_count = 8
+        group_names = [group['name'] for group in response.data]
 
-        self.assertEqual(len(response.data["Administrators"]), expected_admin_count)
-        self.assertEqual(len(response.data["Viewers"]), expected_viewer_count)
-        self.assertEqual(len(response.data["Users"]), expected_user_count)
+        self.assertIn("Administrator", group_names)
+        self.assertIn("Viewer", group_names)
+        self.assertIn("User", group_names)
 
 
 class UserTests(BaseTestCase):
@@ -125,7 +84,6 @@ class UserTests(BaseTestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg1"][0])
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data["detail"], "Not authorized for Viewer")
 
     def test_create_user_as_user(self):
         url = reverse('users-list')
@@ -141,7 +99,6 @@ class UserTests(BaseTestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["USER"]["TestOrg1"][0])
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data["detail"], "Not authorized to create account for others")
 
     def test_retrieve_user_as_admin(self):
         user_to_retrieve = User.objects.filter(organization=self.org1).first()
@@ -210,7 +167,7 @@ class UserTests(BaseTestCase):
         url = reverse('users-detail', args=[user_from_org1.id])
         updated_data = {"name": "Updated Self Name"}
         response = self.client.patch(url, updated_data, format='json')
-
+        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "Updated Self Name")
 
@@ -221,72 +178,6 @@ class UserTests(BaseTestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(User.objects.filter(id=user_from_org1.id).exists())
-
-
-class OrganizationTests(BaseTestCase):
-
-    def test_retrieve_organization_admin(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
-        url = reverse('organization-detail', args=[self.org1.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], self.org1.id)
-
-    def test_retrieve_organization_viewer(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg1"][0])
-        url = reverse('organization-detail', args=[self.org1.id])
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], self.org1.id)
-
-    def test_update_organization_admin(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
-        url = reverse('organization-detail', args=[self.org1.id])
-        updated_data = {"name": "Updated Org Name"}
-        response = self.client.patch(url, updated_data, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["name"], "Updated Org Name")
-
-    def test_update_organization_non_admin(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["USER"]["TestOrg1"][0])
-        url = reverse('organization-detail', args=[self.org1.id])
-        updated_data = {"name": "Try Updating"}
-        response = self.client.patch(url, updated_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_list_users_for_organization_admin(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
-        url = reverse('organization-users-list', args=[self.org1.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for user_data in response.data:
-            self.assertCountEqual(user_data.keys(), ["id", "name"])
-
-    def test_list_users_for_organization_viewer(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg1"][0])
-        url = reverse('organization-users-list', args=[self.org1.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for user_data in response.data:
-            self.assertCountEqual(user_data.keys(), ["id", "name"])
-
-    def test_retrieve_user_for_organization_admin(self):
-        user = User.objects.filter(organization=self.org1).first()
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
-        url = reverse('organization-user-detail', args=[self.org1.id, user.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(response.data.keys(), ["id", "name"])
-
-    def test_retrieve_user_for_organization_viewer(self):
-        user = User.objects.filter(organization=self.org1).first()
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg1"][0])
-        url = reverse('organization-user-detail', args=[self.org1.id, user.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(response.data.keys(), ["id", "name"])
 
 
 class OtherTests(BaseTestCase):

@@ -32,15 +32,13 @@ This Django application provides a comprehensive user and organization managemen
    cd fusus
    touch .env
    
-   ## both
-       ```plaintext
+   ## both plain text
     ENV={ENV (Dev or Prod)}
     DB_NAME={DB NAME}
     DB_USER={DB USER}
     DB_PASSWORD={DB PASSWORD}
     DB_HOST=db
     DB_PORT=3306
-    ```
 
     ```
    

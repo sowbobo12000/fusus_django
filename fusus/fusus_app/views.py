@@ -74,7 +74,7 @@ class GroupView(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet, UserTypeMixin):
-    queryset = User.objects.all().select_related('organization')  # 조직 정보도 함께 가져옵니다.
+    queryset = User.objects.all().select_related('organization')
     serializer_class = UserSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, ]
     search_fields = ['name', 'email']

@@ -11,6 +11,7 @@ class BaseTestCase(APITestCase):
 
         self.tokens = {}
         user_types = ["ADMIN", "VIEWER", "USER"]
+        phone_counter = 1
 
         for user_type in user_types:
             self.tokens[user_type] = {}
@@ -22,8 +23,10 @@ class BaseTestCase(APITestCase):
                         password="password",
                         name=f"{user_type} User {idx}",
                         organization_id=org.id,
+                        phone=str(1000000000 + phone_counter),
                         birthdate='1992-12-20'
                     )
+                    phone_counter += 1
                     users.append(user)
                 else:
                     for i in range(1, 5):
@@ -33,8 +36,10 @@ class BaseTestCase(APITestCase):
                             name=f"{user_type} User {i}",
                             user_type=user_type,
                             organization_id=org.id,
+                            phone=str(1000000000 + phone_counter),
                             birthdate='1992-12-20'
                         )
+                        phone_counter += 1
                         users.append(user)
 
                 self.tokens[user_type][org.name] = [

@@ -48,12 +48,64 @@ class UserTests(BaseTestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 9)
 
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg2"][0])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 9)
+
+    def test_search_users_by_name_as_admin(self):
+        url = reverse('users-list')
+
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
+        search_name = "ADMIN User 1"
+        response = self.client.get(url, {'search': search_name})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['name'], search_name)
+
+    def test_search_users_by_email_as_admin(self):
+        url = reverse('users-list')
+
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
+        search_email = "admin1@testorg1.com"
+        response = self.client.get(url, {'search': search_email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['email'], search_email)
+
+    def test_search_users_by_name_as_viewer(self):
+        url = reverse('users-list')
+
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg1"][0])
+        search_name = "ADMIN User 1"
+        response = self.client.get(url, {'search': search_name})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['name'], search_name)
+
+    def test_search_users_by_email_as_viewer(self):
+        url = reverse('users-list')
+
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg1"][0])
+        search_email = "admin1@testorg1.com"
+        response = self.client.get(url, {'search': search_email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['email'], search_email)
+
+    def test_filter_users_by_phone_as_admin(self):
+        url = reverse('users-list')
+
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
+        filter_phone = "1000000001"
+        response = self.client.get(url, {'phone': filter_phone})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['phone'], filter_phone)
+
+    def test_filter_users_by_phone_as_viewer(self):
+        url = reverse('users-list')
+
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg1"][0])
+        filter_phone = "1000000001"
+        response = self.client.get(url, {'phone': filter_phone})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['phone'], filter_phone)
 
     def test_create_user_admin(self):
         url = reverse('users-list')

@@ -27,12 +27,12 @@ This Django application provides a comprehensive user and organization managemen
     ## dev
    cd fusus/
    mkdir ENV && cd ENV
-   touch .env.dev.prod
+   touch .env.dev
    
    ## prod
    cd fusus
    mkdir ENV && cd ENV
-   touch .env.dev.prod
+   touch .env.prod
    
    ## both plain text
     ENV={ENV (Dev or Prod)}

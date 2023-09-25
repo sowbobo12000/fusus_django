@@ -25,7 +25,7 @@ This Django application provides a comprehensive user and organization managemen
 3. Create .env file
     ```bash
     ## dev
-   cd fusus/
+   cd fusus
    mkdir ENV && cd ENV
    touch .env.dev
    

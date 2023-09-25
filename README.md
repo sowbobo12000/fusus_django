@@ -48,6 +48,7 @@ This Django application provides a comprehensive user and organization managemen
 4. Run Docker Container
     ```bash
     ## dev
+   cd fusus/test
    docker-compose --env-file ../ENV/.env.dev -f docker-compose-dev.yml up -d
    
    ## prod
@@ -63,6 +64,7 @@ This Django application provides a comprehensive user and organization managemen
 6. Down the docker container
     ```bash
     ## dev
+   cd fusus/test
    docker-compose -f docker-compose-dev.yml down -v
    
    ## prod

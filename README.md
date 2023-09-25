@@ -82,5 +82,5 @@ API supports JWT authentication.
    docker-compose -f docker-compose-dev.yml up -dev
    docker ps 
    docker exec -it test-web-1 /bin/bash
-   python manage.py test fusus_app/tests
+   python manage.py test user org
     ```

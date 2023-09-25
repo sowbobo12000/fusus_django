@@ -26,11 +26,9 @@ This Django application provides a comprehensive user and organization managemen
 3. Run Docker Container
     ```bash
     ## dev
-   docker-compose -f docker-compose-dev.yml build --no-cache
    docker-compose -f docker-compose-dev.yml up -d
    
    ## prod
-   docker-compose build --no-cache
    docker-compose up -d
     ```
    
@@ -85,7 +83,6 @@ API supports JWT authentication.
     ```bash
    cd fusus/test
    docker-compose -f docker-compose-dev.yml down -v
-   docker-compose -f docker-compose-dev.yml build --no-cache
    docker-compose -f docker-compose-dev.yml up -dev
    docker ps 
    docker exec -it test-web-1 /bin/bash

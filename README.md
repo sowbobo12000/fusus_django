@@ -3,7 +3,7 @@
 This Django application provides a comprehensive user and organization management system. It consists of two main models: Organization and User. Organizations serve as entities to group users, and the User model represents individuals belonging to these organizations. Users come with specific roles such as Administrator, Viewer, and the standard User. Each role has different permissions for CRUD operations on the models.
 
 ## Table of Contents
-- [Setup Environment](#Setup Environment)
+- [Setup Environment](#setup-environment)
 - [API Endpoints](#api-endpoints)
 - [Testing](#testing)
   

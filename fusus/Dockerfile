@@ -5,7 +5,8 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y \
     default-mysql-client \
-    default-libmysqlclient-dev && \
+    default-libmysqlclient-dev \
+    vim && \
     apt install wait-for-it \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 

@@ -1,18 +1,14 @@
-from rest_framework import serializers, viewsets
+import requests
 from .serializers import UserSerializer, OrganizationSerializer, GroupsSerializer, MinimalUserSerializer
 from .models import User, Organization
-from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken, AccessToken
+from rest_framework import filters, status, serializers, viewsets
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
-from rest_framework import filters
-from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-import requests
-from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate
-
 from enum import Enum
 
 
@@ -55,55 +51,6 @@ def login(request):
         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)})
     else:
         return Response({'error': 'Invalid Email or Password'}, status=400)
-
-
-# def login_view(request):
-#     if request.method == "POST":
-#         response = login(request)
-#         if response.status_code == 200:
-#             return redirect('user_list')
-#         else:
-#             error_message = response.data.get("error", "Unknown error")
-#             return render(request, 'login.html', {'error_message': error_message})
-#     else:
-#         return render(request, 'login.html')
-
-
-# def user_create(request):
-#     if request.method == "POST":
-#         name = request.POST['name']
-#         phone = request.POST['phone']
-#         email = request.POST['email']
-#         organization = Organization.objects.get(id=request.POST['organization'])
-#         birthdate = request.POST['birthdate']
-#         user_type = request.POST['user_type']
-#         password = request.POST['password']
-#
-#         user = User(
-#             name=name,
-#             phone=phone,
-#             email=email,
-#             organization=organization,
-#             birthdate=birthdate,
-#             user_type=user_type
-#         )
-#         user.set_password(password)
-#         user.save()
-#
-#         return redirect('user_list')
-#     else:
-#         organizations = Organization.objects.all()
-#         user_type_choices = User.USER_TYPE_CHOICES
-#         context = {
-#             'organizations': organizations,
-#             'user_type_choices': user_type_choices,
-#         }
-#         return render(request, 'create_user.html', context)
-
-
-# def user_list(request):
-#     users = User.objects.all()
-#     return render(request, 'user_list.html', {'users': users})
 
 
 class GroupView(APIView):

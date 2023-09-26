@@ -72,12 +72,18 @@ class UserViewSet(viewsets.ModelViewSet):
         requesting_user = request.user
         user_from_db = User.objects.filter(id=kwargs.get('pk')).first()
 
-        if not user_from_db or user_from_db.organization != requesting_user.organization:
-            return Response({"detail": "Not authorized to view user from another organization"},
+        if not user_from_db:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if requesting_user.user_type == UserType.VIEWER.value and user_from_db.organization != requesting_user.organization:
+            return Response({"detail": "Not authorized to retrieve user from another organization"},
                             status=status.HTTP_403_FORBIDDEN)
 
-        user = self.get_object()
-        serializer = self.get_serializer(user)
+        elif requesting_user.user_type == UserType.USER.value and user_from_db != requesting_user:
+            return Response({"detail": "Not authorized to retrieve other user's information"},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(user_from_db)
         return Response(serializer.data)
 
     def create(self, request):
@@ -102,6 +108,10 @@ class UserViewSet(viewsets.ModelViewSet):
             user_type = request.data.get("user_type")
             password = request.data.get("password")
 
+            if user_type == UserType.ADMINISTRATOR.value and organization_id != str(request.user.organization_id):
+                return Response({"detail": "Admin user can only create user for their own organization."},
+                                status=status.HTTP_403_FORBIDDEN)
+
             try:
                 user = User.objects.create_user(
                     email=email,
@@ -125,7 +135,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
 
         if (user_type == UserType.ADMINISTRATOR.value and
-                request.user.organization == user.organization) or IsUser().has_object_permission(request, None, user):
+            request.user.organization == user.organization) or IsUser().has_object_permission(request, None, user):
             if "password" in request.data:
                 user.set_password(request.data["password"])
                 user.save()

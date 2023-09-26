@@ -187,14 +187,6 @@ class UserTests(BaseTestCase):
         response = self.client.get(url)
         self.assertNotEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_retrieve_users_admin_wrong_org(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg2"][0])
-        user_from_org1 = User.objects.filter(organization=self.org1).first()
-        url = reverse('users-detail', args=[user_from_org1.id])
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
     def test_retrieve_users_viewer_wrong_org(self):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["VIEWER"]["TestOrg2"][0])
 

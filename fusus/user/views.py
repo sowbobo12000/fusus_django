@@ -46,6 +46,9 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'email']
     filter_fields = ['phone']
 
+    def _check_same_organization(self, user1, user2):
+        return user1.organization_id == user2.organization_id
+
     def get_permissions(self):
         if self.action in ['create', 'destroy']:
             permission_classes = [IsAdministrator]
@@ -108,8 +111,8 @@ class UserViewSet(viewsets.ModelViewSet):
             user_type = request.data.get("user_type")
             password = request.data.get("password")
 
-            if user_type == UserType.ADMINISTRATOR.value and organization_id != str(request.user.organization_id):
-                return Response({"detail": "Admin user can only create user for their own organization."},
+            if not self._check_same_organization(request.user, User(organization_id=organization_id)):
+                return Response({"detail": "Can only create user for the same organization."},
                                 status=status.HTTP_403_FORBIDDEN)
 
             try:
@@ -162,6 +165,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
         try:
             user = User.objects.get(pk=pk)
+
+            if not self._check_same_organization(request.user, user):
+                return Response({"detail": "Not authorized to delete user from another organization"},
+                                status=status.HTTP_403_FORBIDDEN)
             user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except User.DoesNotExist:

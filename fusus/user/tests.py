@@ -116,7 +116,7 @@ class UserTests(BaseTestCase):
             "phone": "919",
             "birthdate": "1992-12-20",
             "user_type": "USER",
-            "organization": self.org2.id
+            "organization": self.org1.id
         }
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.tokens["ADMIN"]["TestOrg1"][0])
         response = self.client.post(url, data, format='json')
